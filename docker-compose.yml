@@ -1,0 +1,85 @@
+version: '3'
+networks:
+  prsandbox01:
+    driver: bridge
+volumes:
+  prometheus_data: {}
+  grafana_data: {}
+services:
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alert.rules:/etc/prometheus/alert.rules
+      - ./prometheus_linux.json:/etc/prometheus/prometheus_linux.json
+      - ./prometheus_windows.yml:/etc/prometheus/prometheus_windows.yml
+      - ./prometheus_data:/prometheus
+    ports:
+      - '9090:9090'
+    restart: unless-stopped
+    networks:
+      - prsandbox01
+  node-exporter:
+    image: prom/node-exporter
+    ports:
+      - '9100:9100'
+    networks:
+      - prsandbox01 
+  alertmanager:
+    image: prom/alertmanager
+    container_name: alertmanager
+    volumes: 
+      - ./alertmanager/:/etc/alertmanager/
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://${PROMETHEUS_SERVER_NAME}:9093'
+    restart: unless-stopped
+    ports:
+      - '9093:9093'
+    networks:
+      - prsandbox01 
+  cadvisor:
+    image: google/cadvisor
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      #- /sys:/sys:ro
+      - /sys/fs/cgroup/cpu,cpuacct:/sys/fs/cgroup/cpuacct,cpu
+      - /var/lib/docker/:/var/lib/docker:ro
+      #- /cgroup:/cgroup:ro #doesn't work on MacOS only for Linux
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    networks:
+      - prsandbox01 
+  pushgateway:
+    image: prom/pushgateway
+    container_name: pushgateway
+    restart: unless-stopped
+    ports:
+      - '9091:9091'
+    networks:
+      -  prsandbox01
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/datasources:/etc/grafana/datasources
+      - ./grafana/dashboards:/etc/grafana/dashboards
+      - ./grafana/setup.sh:/setup.sh
+    entrypoint: /setup.sh
+    environment:
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource,camptocamp-prometheus-alertmanager-datasource
+      - GF_SMTP_ENABLED=true
+      - GF_SMTP_HOST=<SMTP_HOST>
+      - GF_SMTP_SKIP_VERIFY=true
+      - GF_SERVER_ROOT_URL=http://${GRAFANA_SERVER_NAME}:3000
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+    networks:
+      - prsandbox01
