@@ -43,7 +43,7 @@ groups:
 - name: Instance Down 
   rules:
 # Alert for any instance that is unreachable for >5 minutes.
-  - alert: InstanceDown
+  - alert: Host Monitor
     expr: up == 0
     for: 5m
     labels:
