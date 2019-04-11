@@ -14,7 +14,13 @@ services:
       - ./prometheus_linux.json:/etc/prometheus/prometheus_linux.json
       - ./prometheus_windows.yml:/etc/prometheus/prometheus_windows.yml
       - ./prometheus_data:/prometheus
-    ports:
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.external-url=http://${PROMETHEUS_SERVER_NAME}:9090'
+      - '--storage.tsdb.retention=50h'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+     ports:
       - '9090:9090'
     restart: unless-stopped
     networks:
