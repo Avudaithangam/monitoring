@@ -77,7 +77,7 @@ services:
       - ./grafana/setup.sh:/setup.sh
     entrypoint: /setup.sh
     environment:
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource,camptocamp-prometheus-alertmanager-datasource
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource,camptocamp-prometheus-alertmanager-datasource,grafana-piechart-panel
       - GF_SMTP_ENABLED=true
       - GF_SMTP_HOST=<SMTP_HOST>
       - GF_SMTP_SKIP_VERIFY=true
